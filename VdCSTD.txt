@@ -1,0 +1,131 @@
+pragma solidity ^0.4.18;
+contract BauCSTD
+{
+    address[] public DsBau;
+    address[] public DsNguoiBau;
+    address public chairperson;
+    uint8 LimitNguoiBau=10;
+    uint8 LimitNguoiUngcu=3;
+
+    struct NDBau
+    {
+       string Name ;
+        uint8 Countvote;
+    }
+    struct NguoiDiBau
+    {
+        string Name;
+        bool Vote;
+    }
+    mapping(address=>NDBau) Voter;
+    mapping(address=>NguoiDiBau) NguoiBau;
+    event log(string comment, string variable);
+    function BauCSTD(address CSTD, string name) public
+    {
+        chairperson=msg.sender;
+        
+        if(CSTD != address(0x00) && (CSTD!=chairperson))
+        {
+            var temp= Voter[CSTD];
+            temp.Name=name;
+            temp.Countvote=0;
+            
+            DsBau.push(CSTD);
+        }
+    }
+    
+    function adDsBau(address CSTD, string name) public 
+    {
+        if(msg.sender==chairperson)
+        {
+             if((CSTD!=chairperson) && (DsBau.length < LimitNguoiUngcu))
+            {
+                var temp= Voter[CSTD];
+                temp.Name=name;
+                temp.Countvote=0;
+                DsBau.push(CSTD);
+            }
+        }
+       
+       // Voter[CSTD].Countvote=0;
+    }
+    
+    function ThemDsNguoiDiBau(address NDiBau, string name) public
+    {
+        if(msg.sender==chairperson)
+        {
+            if((NDiBau!=chairperson) && (DsNguoiBau.length < LimitNguoiBau))  
+            {
+                var temp= NguoiBau[NDiBau];
+                temp.Name=name;
+                temp.Vote=true;
+         
+                DsNguoiBau.push(NDiBau);
+            }
+        }
+        
+    }
+    function Votefor(address Nguoidibau, address CSTD) public 
+    {
+        if(Nguoidibau==msg.sender)
+        {
+            for(uint8 j=0; j<DsNguoiBau.length; j++)
+            {
+                if(keccak256(Nguoidibau)==keccak256(DsNguoiBau[j]))
+                {
+                    var vote=NguoiBau[Nguoidibau];
+                    if(vote.Vote==true)
+                    {
+                         for(uint8 i=0; i<DsBau.length; i++)
+                        {
+                            if(keccak256(CSTD)==keccak256(DsBau[i]))
+                            {
+                                Voter[DsBau[i]].Countvote=Voter[DsBau[i]].Countvote+1;
+                            }
+                        }
+                        vote.Vote=false;
+                    }
+               
+                }
+            }
+        }
+        
+        
+        
+    }
+    function totalVote(address CSTD) public view returns(uint8 vote, string name)
+    {
+         for(uint8 i=0; i<DsBau.length; i++)
+         {
+            if(keccak256(CSTD)==keccak256(DsBau[i]))
+            {
+                 return (Voter[DsBau[i]].Countvote,Voter[DsBau[i]].Name);
+            }
+         }
+        
+    }
+    
+    function viewWin() public constant returns(address adr, string name)
+    {
+        uint k=0;
+        int NumVote=0;
+        string memory name1;
+        
+        for(uint8 i=0; i<DsBau.length; i++)
+        {
+            if(Voter[DsBau[i]].Countvote>NumVote)
+            {
+                NumVote=Voter[DsBau[i]].Countvote;
+                name1=Voter[DsBau[i]].Name;
+                k=i;
+            }
+        }
+       // bytes32 addr=keccak256(DsBau[k]);
+        return (DsBau[k],name1);
+    }
+    
+    function viewlenght() public view returns(uint256 lenDsBau, uint256 lenDsDiBau)
+    {
+        return (DsBau.length, DsNguoiBau.length);
+    }
+}
